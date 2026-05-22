@@ -50,6 +50,12 @@ G_BA : Domain B → Domain A   (e.g. artifact tile → clean WSI tile)
 ```
 
 **Cycle consistency** enforces that translating an image to the other domain and back recovers the original: `G_BA(G_AB(x)) ≈ x`. This prevents the generator from ignoring the input content.
+  
+### 📊 Cycle-GAN Framework Results
+
+| Sample 1 | Sample 2 | Sample 3 |
+| :---: | :---: | :---: |
+| <img src="images/sample_1.png" width="300" height="300" style="object-fit: cover;"> | <img src="images/sample_2.png" width="300" height="300" style="object-fit: cover;"> | <img src="images/sample_3.png" width="300" height="300" style="object-fit: cover;"> |
 
 ---
 
