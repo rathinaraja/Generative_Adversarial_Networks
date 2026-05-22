@@ -1,0 +1,21 @@
+name: gan_framework
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.10
+  - pytorch>=2.0.0
+  - torchvision>=0.15.0
+  - pytorch-cuda=12.1          # change to 11.8 for older drivers
+  - numpy>=1.23.0
+  - pillow>=9.0.0
+  - matplotlib>=3.7.0
+  - tqdm>=4.65.0
+  - pyyaml>=6.0
+  - pip
+  - pip:
+    - addict>=2.4.0
+    - pytorch-fid>=0.3.0       # optional: FID evaluation

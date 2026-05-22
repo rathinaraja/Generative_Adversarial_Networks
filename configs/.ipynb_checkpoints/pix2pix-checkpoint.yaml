@@ -1,0 +1,23 @@
+# configs/pix2pix.yaml — Pix2Pix: paired image-to-image translation
+# Requires paired images: real tile <-> artifact version of the same tile
+_base_: base.yaml
+
+General:
+  model_name: pix2pix
+
+Dataset:
+  domain_a_dir: /path/to/real_tiles          # input images
+  domain_b_dir: /path/to/artifact_tiles      # target images (same filename)
+  paired: true                               # MUST be true for Pix2Pix
+
+Training:
+  epochs: 200
+  batch_size: 1
+  lr_generator: 2.0e-4
+  lambda_l1: 100.0                           # L1 reconstruction loss weight
+
+Pix2Pix:
+  generator_features: 64
+  discriminator_features: 64
+  use_unet: true                             # UNet generator (vs ResNet)
+  n_layers_disc: 3                           # PatchGAN discriminator layers

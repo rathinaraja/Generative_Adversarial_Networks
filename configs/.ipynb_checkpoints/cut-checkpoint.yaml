@@ -1,0 +1,27 @@
+# configs/cut.yaml — CUT: Contrastive Unpaired Translation (2020)
+# State-of-the-art single-sided unpaired translation — trains faster than CycleGAN
+# No need for the reverse generator (F); only G: A→B is trained
+_base_: base.yaml
+
+General:
+  model_name: cut
+
+Dataset:
+  domain_a_dir: /path/to/real_wsi_tiles
+  domain_b_dir: /path/to/artifact_tiles
+  paired: false
+
+Training:
+  epochs: 200
+  batch_size: 1
+  lr_generator: 2.0e-4
+  lambda_nce: 1.0                           # PatchNCE loss weight
+  nce_layers: [0, 4, 8, 12, 16]            # feature layers for PatchNCE
+
+CUT:
+  generator_features: 64
+  discriminator_features: 64
+  num_residual_blocks: 9
+  nce_temperature: 0.07
+  num_patches: 256                          # number of patches for NCE loss
+  flip_equivariance: false

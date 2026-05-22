@@ -1,0 +1,52 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# configs/base.yaml — shared defaults inherited by all model configs
+# Override any field via --options KEY=VALUE at the command line
+# ─────────────────────────────────────────────────────────────────────────────
+
+General:
+  seed: 42
+  device: 0          # single GPU
+  # device: [0,1]    # specific GPUs (DataParallel)
+  # device: all      # all available GPUs
+  # device: cpu      # force CPU
+  num_workers: 8
+  mixed_precision: true
+  gradient_accumulation_steps: 4
+  log_every_n_steps: 100
+  save_every_n_epochs: 10
+  keep_best_k: 3
+
+Dataset:
+  # Single-domain: set domain_a_dir only
+  # Cross-domain : set both domain_a_dir and domain_b_dir
+  domain_a_dir: /path/to/real_images          # clean WSI tiles / source domain
+  domain_b_dir: null                          # artifact images / target domain
+  image_size: 256
+  extensions: [png, jpg, jpeg, bmp, tiff]
+  paired: false                               # true only for Pix2Pix
+
+Augmentation:
+  horizontal_flip: true
+  vertical_flip: true
+  random_crop: true
+  normalize_mean: [0.5, 0.5, 0.5]
+  normalize_std:  [0.5, 0.5, 0.5]
+
+Training:
+  epochs: 300
+  batch_size: 1
+  lr_generator:     2.0e-4
+  lr_discriminator: 2.0e-4
+  beta1: 0.5
+  beta2: 0.999
+  scheduler: linear_decay                     # linear_decay | cosine | none
+  decay_start_epoch: 100                      # epoch to begin LR decay
+  lambda_cycle: 10.0                          # cycle consistency weight
+  lambda_identity: 5.0                        # identity loss weight
+  lambda_gp: 10.0                             # gradient penalty (WGAN-GP)
+  pool_size: 50                               # fake image history buffer size
+
+Logs:
+  log_root_dir: logs/
+  sample_dir: samples/                        # visual samples per epoch
+  n_sample_images: 5                          # how many samples to save per epoch

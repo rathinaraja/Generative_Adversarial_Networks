@@ -1,0 +1,24 @@
+# configs/cycle_gan.yaml — CycleGAN: cross-domain unpaired image translation
+# Maps real WSI tiles ↔ artifact tiles bidirectionally
+_base_: base.yaml
+
+General:
+  model_name: cycle_gan
+
+Dataset:
+  domain_a_dir: /path/to/real_wsi_tiles      # source domain (clean)
+  domain_b_dir: /path/to/artifact_tiles      # target domain (artifacts)
+  paired: false
+
+Training:
+  epochs: 300
+  batch_size: 1
+  lr_generator: 2.0e-4
+  lambda_cycle: 10.0
+  lambda_identity: 5.0
+
+CycleGAN:
+  generator_features: 64
+  discriminator_features: 64
+  num_residual_blocks: 9                    # 9 for 256px, 6 for 128px
+  use_instance_norm: true                   # InstanceNorm recommended for GAN

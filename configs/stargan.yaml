@@ -1,0 +1,28 @@
+# configs/stargan.yaml — StarGAN: multi-domain translation with a single model
+# Train one G+D pair to translate across N artifact domains simultaneously
+_base_: base.yaml
+
+General:
+  model_name: stargan
+
+Dataset:
+  # For StarGAN, domain_a_dir should be a root with one subfolder per class
+  domain_a_dir: /path/to/multi_domain_root   # subfolders = domain labels
+  domain_b_dir: null
+  paired: false
+
+Training:
+  epochs: 200
+  batch_size: 16
+  lr_generator: 1.0e-4
+  lr_discriminator: 1.0e-4
+  lambda_cls: 1.0                           # domain classification loss
+  lambda_rec: 10.0                          # reconstruction (cycle) loss
+  lambda_gp: 10.0                           # gradient penalty (WGAN-GP)
+  n_critic: 5                               # discriminator steps per generator step
+
+StarGAN:
+  num_domains: 4                            # number of artifact domains
+  generator_features: 64
+  discriminator_features: 64
+  num_residual_blocks: 6

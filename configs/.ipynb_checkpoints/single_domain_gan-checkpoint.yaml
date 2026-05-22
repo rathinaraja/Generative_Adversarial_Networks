@@ -1,0 +1,22 @@
+# configs/single_domain_gan.yaml — Single-domain GAN
+# Learns a self-consistent style transform within ONE image collection
+# (e.g., learn internal WSI artifact variation from artifact tiles alone)
+_base_: base.yaml
+
+General:
+  model_name: single_domain_gan
+
+Dataset:
+  domain_a_dir: /path/to/single_domain_images
+  domain_b_dir: null                         # not used
+
+Training:
+  epochs: 200
+  batch_size: 2
+  lr_generator: 2.0e-4
+  lambda_cycle: 10.0
+
+SingleDomainGAN:
+  generator_features: 64
+  discriminator_features: 64
+  num_residual_blocks: 6

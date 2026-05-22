@@ -1,0 +1,14 @@
+# configs/vanilla_gan.yaml — Classic GAN (single-domain artifact augmentation)
+_base_: base.yaml
+
+General:
+  model_name: vanilla_gan
+
+Dataset:
+  domain_a_dir: /path/to/source_images
+
+VanillaGAN:
+  latent_dim: 100
+  generator_features: 64
+  discriminator_features: 64
+  num_residual_blocks: 0

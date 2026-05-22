@@ -1,0 +1,28 @@
+# configs/diffaug_gan.yaml — DiffAugGAN: Differentiable Augmentation GAN (2020)
+# Best for LIMITED data scenarios — applies differentiable augmentation to
+# both real and fake images during discriminator training, greatly improving
+# training stability with small WSI artifact datasets
+_base_: base.yaml
+
+General:
+  model_name: diffaug_gan
+
+Dataset:
+  domain_a_dir: /path/to/real_tiles
+  domain_b_dir: /path/to/artifact_tiles
+  paired: false
+
+Training:
+  epochs: 200
+  batch_size: 4
+  lr_generator: 2.0e-4
+  lambda_cycle: 10.0
+  lambda_identity: 5.0
+
+DiffAugGAN:
+  generator_features: 64
+  discriminator_features: 64
+  num_residual_blocks: 9
+  # Augmentation policy applied to discriminator inputs (comma-separated)
+  # Options: color, translation, cutout
+  aug_policy: "color,translation,cutout"
