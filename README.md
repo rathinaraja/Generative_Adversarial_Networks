@@ -7,7 +7,7 @@
 [![Models](https://img.shields.io/badge/Models-7%20GAN%20Architectures-purple?style=flat-square)](#implemented-models)
 [![Task](https://img.shields.io/badge/Task-WSI%20Artifact%20Augmentation-red?style=flat-square)]()
 
----
+---  
 
 ## Table of Contents
 
