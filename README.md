@@ -1,13 +1,13 @@
 # 🎨 GAN Framework for WSI Artifact Augmentation
 
-> A unified, modular framework for GAN-based image-to-image translation — designed for introducing realistic Whole Slide Image (WSI) artifacts into clean pathology tiles using classical GAN, single-domain, and cross-domain cycle-consistent models.
+> A unified, modular framework for GAN-based image-to-image translation — designed for introducing realistic Whole Slide Image (WSI) artifacts into clean pathology tiles using 11 state-of-the-art GAN architectures.
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-orange?style=flat-square)](https://pytorch.org/)
-[![Models](https://img.shields.io/badge/Models-7%20GAN%20Architectures-purple?style=flat-square)](#implemented-models)
+[![Models](https://img.shields.io/badge/Models-11%20GAN%20Architectures-purple?style=flat-square)](#implemented-models)
 [![Task](https://img.shields.io/badge/Task-WSI%20Artifact%20Augmentation-red?style=flat-square)]()
 
----  
+---
 
 ## Table of Contents
 
@@ -17,14 +17,15 @@
   - [WSI Artifacts](#wsi-artifacts-in-pathology)
   - [GAN-Based Artifact Augmentation](#gan-based-artifact-augmentation-for-wsi)
 - [Implemented Models](#implemented-models)
+- [Files to Add a New Model](#files-to-add-a-new-model)
 - [Project Structure](#project-structure)
 - [Environment Setup](#environment-setup)
 - [Configuration](#configuration)
+- [GPU Configuration](#gpu-configuration)
 - [Usage](#usage)
   - [Training](#training)
   - [Evaluation](#evaluation)
   - [Inference](#inference)
-- [Adding a New Model](#adding-a-new-model)
 - [Acknowledgements](#acknowledgements)
 
 ---
@@ -50,72 +51,153 @@ G_BA : Domain B → Domain A   (e.g. artifact tile → clean WSI tile)
 ```
 
 **Cycle consistency** enforces that translating an image to the other domain and back recovers the original: `G_BA(G_AB(x)) ≈ x`. This prevents the generator from ignoring the input content.
-  
+
 ### 📊 Cycle-GAN Framework Results
 
 | Sample 1 | Sample 2 | Sample 3 |
 | :---: | :---: | :---: |
 | <img src="images/sample_1.png" width="300" height="300" style="object-fit: cover;"> | <img src="images/sample_2.png" width="300" height="300" style="object-fit: cover;"> | <img src="images/sample_3.png" width="300" height="300" style="object-fit: cover;"> |
 
+
 ---
 
 ### WSI Artifacts in Pathology
 
-Whole Slide Images are digitised at very high resolution (×20–×40 magnification), making them susceptible to a range of **technical artifacts** introduced during tissue preparation, staining, and scanning:
+Whole Slide Images are digitised at high resolution (×20–×40 magnification), making them susceptible to technical artifacts during tissue preparation, staining, and scanning:
 
 | Artifact Type | Description | Impact |
 |---|---|---|
-| **Bubbles / Air pockets** | Air trapped under coverslip creates circular clear regions | Occludes tissue; misleads models |
-| **Colour variation** | Scanner calibration, stain batch, and tissue thickness differences | Domain shift across cohorts |
+| **Bubbles / Air pockets** | Air trapped under coverslip | Occludes tissue; misleads models |
+| **Colour variation** | Scanner calibration, stain batch differences | Domain shift across cohorts |
 | **Blur / Out-of-focus** | Tissue folds or scanner focus errors | Reduces feature quality |
-| **Pen marks** | Pathologist annotations on the glass slide | False positive regions |
+| **Pen marks** | Pathologist annotations on glass | False positive regions |
 | **Tissue folding** | Physical creasing creates overlapping layers | Distorted morphology |
 | **Dark regions** | Over-staining or thick tissue | Feature suppression |
 | **Scratches / Dust** | Glass surface contamination | Spurious patterns |
-
-These artifacts occur unpredictably in real clinical WSI collections. Deep learning models trained on clean data fail silently when deployed on artifact-containing slides — a major robustness problem.
 
 ---
 
 ### GAN-Based Artifact Augmentation for WSI
 
-The key insight of this framework is to **use real artifact images as style teachers**:
-
 ```
 Real clean tile  +  Real artifact tile  →  Synthetic tile with realistic artifact
 ```
 
-Rather than simulating artifacts analytically (which looks artificial), we learn the visual statistics of real artifacts from actual WSI data and transfer them to clean images. This produces augmented training data that:
-
-- Preserves the tissue morphology of the clean source image
-- Introduces visually realistic, data-driven artifact patterns
-- Covers the full distribution of artifact intensities and types
-- Requires no paired data (clean tile + same tile with artifact)
-
-The framework supports four strategies depending on your data availability:
-
-| Strategy | Model | Data Required | Use Case |
-|---|---|---|---|
-| **Single-domain** | `single_domain_gan` | Only artifact tiles | Learn internal variation from artifacts alone |
-| **Cross-domain (unpaired)** | `cycle_gan`, `cut`, `diffaug_gan` | Clean tiles + artifact tiles (unpaired) | Transfer artifact style onto clean tiles |
-| **Cross-domain (paired)** | `pix2pix` | Matched (clean, artifact) tile pairs | Highest quality when pairs are available |
-| **Multi-domain** | `stargan` | N groups of artifact-type folders | One model for all artifact types |
+Rather than simulating artifacts analytically, we learn the visual statistics of real artifacts from actual WSI data and transfer them to clean images — preserving tissue morphology while introducing realistic artifact patterns with no paired data required.
 
 ---
 
 ## Implemented Models
 
-| # | Model | Year | Type | Key Feature |
-|---|---|---|---|---|
-| 1 | **Vanilla GAN** | 2014 | Single-domain | Baseline CNN encoder-decoder generator |
-| 2 | **CycleGAN** | 2017 | Cross-domain | ResNet generator + cycle + identity loss |
-| 3 | **Single-Domain GAN** | custom | Single-domain | Internal style variation within one domain |
-| 4 | **Pix2Pix** | 2017 | Paired cross-domain | U-Net generator + conditional PatchGAN |
-| 5 | **CUT** | 2020 | Cross-domain | PatchNCE contrastive loss — no reverse G needed |
-| 6 | **StarGAN** | 2018 | Multi-domain | Single G+D pair handles all N artifact domains |
-| 7 | **DiffAugGAN** | 2020 | Cross-domain | Differentiable augmentation — best for small datasets |
+| # | Model | Year | Type | Key Feature | Best For |
+|---|---|---|---|---|---|
+| 1 | **Vanilla GAN** | 2014 | Single-domain | Simple CNN encoder-decoder | Quick baseline |
+| 2 | **DCGAN** | 2015 | Single-domain | Strided conv + BatchNorm, no FC | Stable training baseline |
+| 3 | **CycleGAN** | 2017 | Cross-domain | ResNet G + cycle + identity loss | Standard unpaired translation |
+| 4 | **Pix2Pix** | 2017 | Paired | U-Net G + conditional PatchGAN | Paired clean↔artifact tiles |
+| 5 | **StarGAN** | 2018 | Multi-domain | Single G+D for all N domains | Multiple artifact types at once |
+| 6 | **Single-Domain GAN** | custom | Single-domain | Internal style variation | Artifact-only dataset |
+| 7 | **CUT** | 2020 | Cross-domain | PatchNCE — no reverse G | Faster than CycleGAN |
+| 8 | **DiffAugGAN** | 2020 | Cross-domain | Differentiable augmentation | Small datasets (<1k images) |
+| 9 | **ResNet GAN** | 2020 | Cross-domain | Pretrained ResNet-50 encoder | Limited data + ImageNet warmstart |
+| 10 | **BigGAN** | 2018 | Cross-domain | Self-attention + spectral norm + conditional BN | Large datasets, global coherence |
+| 11 | **StyleGAN** | 2020 | Cross-domain | Mapping network + modulated conv + equalized LR | Highest quality production output |
 
-Switch between all models by changing only the `--config` argument — no code changes needed.
+All models share the same CLI interface — switch by changing only `--config`.
+
+---
+
+### Model Selection Guide
+
+```
+Small artifact dataset (<1000 images)?
+  └─ DiffAugGAN  ← differentiable augmentation stabilises small-data training
+
+Single artifact type, one domain?
+  └─ DCGAN  or  Single-Domain GAN  ← self-contained style learning
+
+Multiple artifact types in separate folders?
+  └─ StarGAN  ← one model, conditioned on domain label
+
+Unpaired clean + artifact tiles?
+  ├─ CUT          ← fastest, good quality, no reverse G needed
+  ├─ CycleGAN     ← robust, widely validated
+  ├─ ResNet GAN   ← best when training data is limited (ImageNet warmstart)
+  └─ BigGAN       ← best when dataset is large and diverse
+
+Paired clean + artifact tiles (same slide)?
+  └─ Pix2Pix  ← highest consistency when pairs are available
+
+Maximum visual quality for production?
+  └─ StyleGAN  ← modulated convolutions, style injection at every resolution
+```
+
+---
+
+## Files to Add a New Model
+
+Four files need to be created or modified. No changes to `train.py`, `test.py`, or `infer.py`.
+
+### Files to CREATE
+
+**1. Model file** — `modules/<model_name>/model.py`
+
+```python
+# modules/my_gan/model.py
+import torch.nn as nn
+
+class MyGAN(nn.Module):
+    def __init__(self, cfg):
+        super().__init__()
+        c = cfg.MyGAN
+        # Declare generators and discriminators
+        # Cross-domain naming: G_AB, G_BA, D_A, D_B
+        # Single-domain naming: G, D
+
+    # For cross-domain models used in infer.py --direction A2B / B2A:
+    # G_AB must exist for A2B; G_BA must exist for B2A
+```
+
+**2. `__init__.py`** — `modules/<model_name>/__init__.py` (empty file)
+
+**3. Config file** — `configs/<model_name>.yaml`
+
+```yaml
+# configs/my_gan.yaml
+_base_: base.yaml
+
+General:
+  model_name: my_gan        # must match key in MODEL_REGISTRY
+
+Dataset:
+  domain_a_dir: /path/to/source
+  domain_b_dir: /path/to/target   # null for single-domain
+
+Training:
+  epochs: 200
+  batch_size: 1
+
+MyGAN:                      # model-specific hyperparameters
+  generator_features: 64
+  discriminator_features: 64
+```
+
+### File to MODIFY
+
+**4. Registry** — `modules/__init__.py`
+
+```python
+# Add two lines:
+from modules.my_gan.model import MyGAN          # ← import
+MODEL_REGISTRY["my_gan"]  = MyGAN              # ← register
+```
+
+Then train immediately:
+
+```bash
+python train.py --config configs/my_gan.yaml \
+    --options Dataset.domain_a_dir=/data/source Dataset.domain_b_dir=/data/target
+```
 
 ---
 
@@ -125,42 +207,44 @@ Switch between all models by changing only the `--config` argument — no code c
 gan_framework/
 │
 ├── configs/
-│   ├── base.yaml               ← Shared defaults (seed, device, augmentation, training)
+│   ├── base.yaml               ← Shared defaults (all models inherit this)
 │   ├── vanilla_gan.yaml
-│   ├── cycle_gan.yaml          ← ResNet CycleGAN (cross-domain)
-│   ├── single_domain_gan.yaml  ← Internal style variation
-│   ├── pix2pix.yaml            ← Paired translation (U-Net)
-│   ├── cut.yaml                ← Contrastive Unpaired Translation
-│   ├── stargan.yaml            ← Multi-domain
-│   └── diffaug_gan.yaml        ← Limited data (<1k images)
+│   ├── dcgan.yaml              ← NEW
+│   ├── cycle_gan.yaml
+│   ├── single_domain_gan.yaml
+│   ├── pix2pix.yaml
+│   ├── cut.yaml
+│   ├── stargan.yaml
+│   ├── diffaug_gan.yaml
+│   ├── resnet_gan.yaml         ← NEW
+│   ├── biggan.yaml             ← NEW
+│   └── stylegan.yaml           ← NEW
 │
 ├── modules/
-│   ├── __init__.py             ← MODEL_REGISTRY + get_model(cfg)
+│   ├── __init__.py             ← MODEL_REGISTRY (add new models here)
 │   ├── vanilla_gan/model.py
-│   ├── cycle_gan/model.py      ← ResNet generator + PatchGAN (from your scripts)
+│   ├── dcgan/model.py          ← NEW  DCGAN: strided conv, BatchNorm
+│   ├── cycle_gan/model.py
 │   ├── single_domain_gan/model.py
-│   ├── pix2pix/model.py        ← U-Net generator + conditional discriminator
-│   ├── cut/model.py            ← PatchNCE feature projection heads
-│   ├── stargan/model.py        ← Multi-domain generator with domain label input
-│   └── diffaug_gan/model.py    ← Differentiable augmentation wrapper
+│   ├── pix2pix/model.py
+│   ├── cut/model.py
+│   ├── stargan/model.py
+│   ├── diffaug_gan/model.py
+│   ├── resnet_gan/model.py     ← NEW  ResNet-50 pretrained encoder
+│   ├── biggan/model.py         ← NEW  Self-attention + spectral norm + cBN
+│   └── stylegan/model.py       ← NEW  Mapping network + modulated conv
 │
 ├── utils/
-│   ├── config.py               ← YAML loader with _base_ inheritance + CLI override
-│   ├── dataset.py              ← Single/Unpaired/Paired/MultiDomain datasets + ImagePool
-│   ├── losses.py               ← LSGAN, VanillaGAN, Hinge, cycle, identity, PatchNCE, DiffAug
-│   ├── optimizer.py            ← Adam + linear decay / cosine scheduler
-│   └── logger.py               ← Console logger, CSVLogger, CheckpointManager, sample saver
+│   ├── config.py               ← YAML loader + CLI --options override
+│   ├── dataset.py              ← Single/Unpaired/Paired/Multi datasets (recursive subfolder)
+│   ├── losses.py               ← All loss functions
+│   ├── optimizer.py            ← Adam + schedulers
+│   └── logger.py               ← Logger, CSV, checkpoints, sample saver
 │
 ├── logs/                       ← Auto-created: logs/<timestamp>_<model>/
-│   └── 20240601_cycle_gan/
-│       ├── checkpoints/latest.pth
-│       ├── samples/epoch_0010/
-│       ├── metrics.csv
-│       └── cycle_gan.yaml      ← Config snapshot
-│
-├── train.py                    ← Training entry point
-├── test.py                     ← Evaluation + optional FID
-├── infer.py                    ← Batch artifact generation
+├── train.py
+├── test.py
+├── infer.py
 ├── environment.yml
 └── requirements.txt
 ```
@@ -186,32 +270,33 @@ pip install -r requirements.txt
 
 ## Configuration
 
-All settings live in `configs/`. Each model YAML **inherits from `base.yaml`** and only declares overrides.
+All settings live in `configs/`. Every model YAML **inherits `base.yaml`** and only overrides what it needs.
 
 ### Key `base.yaml` fields
 
 ```yaml
 General:
   seed: 42
-  device: 0                    # GPU index; -1 = CPU
+  device: 0                    # see GPU Configuration below
 
 Dataset:
-  domain_a_dir: /path/to/real_wsi_tiles      # clean source domain
-  domain_b_dir: /path/to/artifact_tiles      # artifact target domain (null for single-domain)
+  domain_a_dir: /path/to/real_wsi_tiles
+  domain_b_dir: /path/to/artifact_tiles  # null for single-domain
   image_size: 256
+  # Supports subfolders recursively — reads .png .jpg .jpeg .bmp .tiff .tif .webp
 
 Training:
   epochs: 300
   batch_size: 1
   lr_generator:     2.0e-4
   lr_discriminator: 2.0e-4
-  lambda_cycle: 10.0           # cycle consistency loss weight
-  lambda_identity: 5.0         # identity loss weight
+  lambda_cycle: 10.0
+  lambda_identity: 5.0
   scheduler: linear_decay      # linear_decay | cosine | none
-  decay_start_epoch: 100       # hold LR until this epoch, then decay to 0
+  decay_start_epoch: 100
 ```
 
-Override any field at the command line without editing YAML:
+Override any field without editing YAML:
 
 ```bash
 python train.py --config configs/cycle_gan.yaml \
@@ -220,49 +305,89 @@ python train.py --config configs/cycle_gan.yaml \
 
 ---
 
+## GPU Configuration
+
+`General.device` accepts four formats — set in `base.yaml` or override at runtime.
+
+| Value | Meaning |
+|---|---|
+| `0` | Single GPU — cuda:0 |
+| `2` | Single GPU — cuda:2 |
+| `[0, 1]` | DataParallel on GPUs 0 and 1 |
+| `[0, 2, 3]` | DataParallel on GPUs 0, 2, 3 |
+| `all` | DataParallel on all available GPUs |
+| `cpu` or `-1` | CPU |
+
+```bash
+# Single GPU
+python train.py --config configs/stylegan.yaml --options General.device=0
+
+# Specific GPUs (quote brackets to protect from shell)
+python train.py --config configs/biggan.yaml --options "General.device=[0,1]"
+
+# All GPUs
+python train.py --config configs/resnet_gan.yaml --options General.device=all
+
+# CPU
+python train.py --config configs/dcgan.yaml --options General.device=cpu
+```
+
+> **Multi-GPU tip:** GAN training defaults to `batch_size: 1`. Set a larger batch when using DataParallel — e.g. `Training.batch_size=4` for 2 GPUs. `test.py` and `infer.py` auto-scale batch size by GPU count.
+
+---
+
 ## Usage
 
 ### Training
 
 ```bash
-# CycleGAN — cross-domain artifact transfer (most common)
+# DCGAN — single-domain artifact style learning
+python train.py --config configs/dcgan.yaml \
+    --options Dataset.domain_a_dir=/data/artifact_tiles General.device=0
+
+# CycleGAN — cross-domain (most common workflow)
 python train.py --config configs/cycle_gan.yaml \
     --options Dataset.domain_a_dir=/data/real_tiles \
               Dataset.domain_b_dir=/data/artifact_tiles \
               Training.epochs=300 General.device=0
 
-# Single-domain — learn style variation from artifact tiles alone
-python train.py --config configs/single_domain_gan.yaml \
-    --options Dataset.domain_a_dir=/data/artifact_tiles General.device=1
+# ResNet GAN — pretrained backbone, less data needed
+python train.py --config configs/resnet_gan.yaml \
+    --options Dataset.domain_a_dir=/data/real_tiles \
+              Dataset.domain_b_dir=/data/artifact_tiles \
+              General.device=1
 
-# CUT — faster than CycleGAN, trains in ~half the time
+# BigGAN — large dataset, global spatial coherence
+python train.py --config configs/biggan.yaml \
+    --options Dataset.domain_a_dir=/data/real_tiles \
+              Dataset.domain_b_dir=/data/artifact_tiles \
+              Training.batch_size=4 General.device=2
+
+# StyleGAN — highest quality production output
+python train.py --config configs/stylegan.yaml \
+    --options Dataset.domain_a_dir=/data/real_tiles \
+              Dataset.domain_b_dir=/data/artifact_tiles \
+              Training.batch_size=4 "General.device=[0,1]"
+
+# CUT — fastest cross-domain training
 python train.py --config configs/cut.yaml \
     --options Dataset.domain_a_dir=/data/real_tiles \
               Dataset.domain_b_dir=/data/artifact_tiles
 
-# Pix2Pix — highest quality when paired tiles are available
-python train.py --config configs/pix2pix.yaml \
-    --options Dataset.domain_a_dir=/data/real_tiles \
-              Dataset.domain_b_dir=/data/paired_artifact_tiles
-
-# StarGAN — one model for bubble + colour + blur artifacts
+# StarGAN — all artifact types in one model
 python train.py --config configs/stargan.yaml \
     --options Dataset.domain_a_dir=/data/multi_artifact_root \
               StarGAN.num_domains=3
 
-# DiffAugGAN — small dataset (<1000 artifact images)?
+# DiffAugGAN — small dataset
 python train.py --config configs/diffaug_gan.yaml \
     --options Dataset.domain_a_dir=/data/real_tiles \
-              Dataset.domain_b_dir=/data/few_artifacts
-```
+              Dataset.domain_b_dir=/data/few_artifact_tiles
 
-Training outputs are auto-saved to `logs/<timestamp>_<model>/`:
-
-```
-logs/20240601_120000_cycle_gan/
-├── checkpoints/latest.pth
-├── samples/epoch_0010/real_A.png  fake_B.png  cycled_A.png  ...
-└── metrics.csv
+# Pix2Pix — paired tiles
+python train.py --config configs/pix2pix.yaml \
+    --options Dataset.domain_a_dir=/data/real_tiles \
+              Dataset.domain_b_dir=/data/paired_artifacts
 ```
 
 ---
@@ -270,88 +395,62 @@ logs/20240601_120000_cycle_gan/
 ### Evaluation
 
 ```bash
-# Generate test outputs and compute FID score
-python test.py --config configs/cycle_gan.yaml \
+# Standard evaluation + FID score
+python test.py --config configs/stylegan.yaml \
     --checkpoint logs/.../checkpoints/latest.pth \
     --fid \
     --options Dataset.domain_a_dir=/data/test_real \
-              Dataset.domain_b_dir=/data/test_artifacts
+              Dataset.domain_b_dir=/data/test_artifacts \
+              General.device=0
+
+# Multi-GPU evaluation
+python test.py --config configs/biggan.yaml \
+    --checkpoint logs/.../checkpoints/latest.pth \
+    --options "General.device=[0,1]"
 ```
 
 ---
 
 ### Inference
 
-Generate artifact images from a folder of clean WSI tiles:
-
 ```bash
-# Add artifacts to 5000 clean tiles (A → B)
-python infer.py --config configs/cycle_gan.yaml \
+# Add artifacts to clean tiles — A2B
+python infer.py --config configs/stylegan.yaml \
     --checkpoint logs/.../checkpoints/latest.pth \
     --input_dir /data/clean_tiles \
-    --output_dir /data/augmented_artifacts \
+    --output_dir /data/generated_artifacts \
     --num_images 5000 \
     --direction A2B \
     --options General.device=0
 
-# Restore clean appearance from artifact tiles (B → A)
-python infer.py --config configs/cycle_gan.yaml \
+# Restore clean tiles from artifacts — B2A
+python infer.py --config configs/resnet_gan.yaml \
     --checkpoint logs/.../checkpoints/latest.pth \
     --input_dir /data/artifact_tiles \
     --output_dir /data/restored_tiles \
-    --direction B2A
-```
+    --direction B2A \
+    --options General.device=0
 
----
-
-## Adding a New Model
-
-Four steps — `train.py`, `test.py`, and `infer.py` require zero modifications.
-
-**Step 1** — Create model file:
-```
-modules/my_gan/model.py
-modules/my_gan/__init__.py
-```
-
-**Step 2** — Implement the standard interface:
-```python
-class MyGAN(nn.Module):
-    def __init__(self, cfg):
-        super().__init__()
-        # Declare G, D (follow naming: G_AB, G_BA, D_A, D_B or G, D)
-```
-
-**Step 3** — Register in `modules/__init__.py`:
-```python
-from modules.my_gan.model import MyGAN
-MODEL_REGISTRY["my_gan"] = MyGAN
-```
-
-**Step 4** — Create YAML config:
-```yaml
-# configs/my_gan.yaml
-_base_: base.yaml
-General:
-  model_name: my_gan
-MyGAN:
-  generator_features: 64
-```
-
-Then train:
-```bash
-python train.py --config configs/my_gan.yaml
+# Maximum throughput on all GPUs
+python infer.py --config configs/cycle_gan.yaml \
+    --checkpoint logs/.../checkpoints/latest.pth \
+    --input_dir /data/clean_tiles \
+    --output_dir /data/artifacts \
+    --options General.device=all
 ```
 
 ---
 
 ## Acknowledgements
 
+- [DCGAN](https://arxiv.org/abs/1511.06434) — Radford et al., 2015
 - [CycleGAN](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix) — Zhu et al., 2017
 - [Pix2Pix](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix) — Isola et al., 2017
-- [CUT](https://github.com/taesungp/contrastive-unpaired-translation) — Park et al., 2020
+- [BigGAN](https://arxiv.org/abs/1809.11096) — Brock et al., 2018
 - [StarGAN](https://github.com/yunjey/stargan) — Choi et al., 2018
+- [CUT](https://github.com/taesungp/contrastive-unpaired-translation) — Park et al., 2020
 - [DiffAugGAN](https://github.com/mit-han-lab/data-efficient-gans) — Zhao et al., 2020
+- [StyleGAN2](https://github.com/NVlabs/stylegan2-ada-pytorch) — Karras et al., 2020
 
 ---
 
